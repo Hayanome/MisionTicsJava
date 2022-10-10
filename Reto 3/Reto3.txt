@@ -1,0 +1,75 @@
+ --Obtener el listado de los identificadores (id) de los materiales de construcción 
+--importados, incluyendo: sus nombres y precios (ordenados por nombre). Utilice los 
+--siguientes alias: ID_MATERIALCONSTRUCCION como ID, 
+--NOMBRE_MATERIAL como NOMBRE y PRECIO_UNIDAD como PRECIO. 
+--Por ejemplo:
+Compra c2 
+
+SELECT mc.ID_MaterialConstruccion as ID_MATERIALCONSTRUCCION, mc.Nombre_Material as NOMBRE, mc.Precio_Unidad as PRECIO  
+FROM MaterialConstruccion mc 
+WHERE Importado  = "Si" 
+ORDER BY Nombre_Material 
+
+
+--	Se necesita conocer el listado de los proyectos, incluyendo la siguiente información: 
+--id del proyecto, constructora, ciudad, clasificación, estrato y nombre completo del 
+--líder de los proyectos que fueron financiados por el banco “Conavi”. Ordenados 
+--desde el proyecto más reciente hasta el más antiguo, por nombre de la ciudad (de 
+--forma ascendente) y por constructora. Para construir el listado mencionado, se debe 
+--realizar un JOIN entre las tablas Proyecto y Tipo, Proyecto Líder. Utilice los 
+--siguientes alias: ID_PROYECTO como ID y la unión del nombre + apellido del 
+--líder como LIDER, el resto, queda en su forma natural.
+
+
+SELECT ID_Proyecto as ID, 
+Constructora, 
+Ciudad, 
+p.Clasificacion , 
+t.Estrato,
+l.Nombre || " "  || l.Primer_Apellido  || " " || l.Segundo_Apellido as LIDER
+FROM Proyecto p
+JOIN Tipo t ON p.ID_Tipo = t.ID_Tipo
+JOIN Lider l ON p.ID_Lider = l.ID_Lider 
+WHERE Banco_Vinculado = "Conavi" 
+ORDER BY Fecha_Inicio DESC, Ciudad, Constructora 
+
+--Se desea conocer por cada ciudad y clasificación: el total de proyectos, la fecha del 
+--proyecto más antiguo y la fecha del proyecto más reciente (ordenados por ciudad y 
+--clasificación). No se deben incluir los proyectos tipo “Casa Campestre” ni 
+--“Condominio”. Por ejemplo
+
+
+SELECT Ciudad, Clasificacion, count (*) AS TOTAL,
+MIN (Fecha_Inicio) AS VIEJO, MAX (Fecha_Inicio) AS RECIENTE
+FROM Proyecto p 
+WHERE Clasificacion NOT IN ("Casa Campestre", "Condominio")
+GROUP BY Ciudad, Clasificacion 
+ORDER BY Ciudad, Clasificacion 
+
+--Se debe presentar el total adeudado en cada proyecto (por las compras no pagadas a 
+--los proveedores). Se debe agrupar los datos por el ID_proyecto y el valor total de la 
+--deuda, siempre y cuando esta última sea superior a $50.000. Ordene los datos de
+--mayor a menor deuda. Por ejemplo:
+
+SELECT ID_Proyecto, sum(c.Cantidad*mc.Precio_Unidad) as VALOR  
+FROM Compra c 
+JOIN MaterialConstruccion mc ON c.ID_MaterialConstruccion = mc.ID_MaterialConstruccion 
+WHERE Pagado = 'No' 
+GROUP by ID_Proyecto
+HAVING sum(c.Cantidad*mc.Precio_Unidad)>50000
+ORDER BY VALOR DESC
+
+-- Seleccione los 10 líderes que han realizado más compras en sus proyectos. Se debe 
+--presentar el nombre completo del líder y el valor total de las compras realizadas. 
+--Para limitar el número de registros, usar al final de la consulta la instrucción LIMIT 
+--<numero>. Por ejemplo:
+
+SELECT l.Nombre || " "  || l.Primer_Apellido  || " " || l.Segundo_Apellido as LIDER,
+sum(c.Cantidad*mc.Precio_Unidad) as VALOR 
+FROM Lider l 
+JOIN Proyecto p  ON l.ID_Lider = p.ID_Lider
+JOIN Compra c ON p.ID_Proyecto = c.ID_Proyecto 
+JOIN MaterialConstruccion mc ON c.ID_MaterialConstruccion = mc.ID_MaterialConstruccion 
+GROUP BY LIDER
+ORDER BY VALOR DESC 
+LIMIT 10
